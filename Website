@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nyx – KI-Codeanalyse</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--panel:#05090d;--line:#12303f;--ice:#8fdcff;--ice2:#c9f0ff;--dim:#6d8794;--text:#d7e9f2;--warn:#ffd27a;--bad:#ff8a9a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*:before,*:after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 Sora,system-ui,sans-serif;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:
+radial-gradient(60% 40% at 80% 0%,rgba(143,220,255,.13),transparent 70%),
+linear-gradient(rgba(143,220,255,.04) 1px,transparent 1px) 0 0/48px 48px,
+linear-gradient(90deg,rgba(143,220,255,.04) 1px,transparent 1px) 0 0/48px 48px;
+-webkit-mask-image:linear-gradient(#000 40%,transparent);mask-image:linear-gradient(#000 40%,transparent)}
+.wrap{position:relative;max-width:1180px;margin:0 auto;padding:0 24px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+.logo{font-weight:700;font-size:22px;letter-spacing:.04em;color:var(--ice2);display:flex;align-items:center;gap:10px}
+.logo i{width:14px;height:14px;border:2px solid var(--ice);border-radius:50%;box-shadow:0 0 14px var(--ice),inset 0 0 6px var(--ice)}
+nav a{color:var(--dim);text-decoration:none;margin-left:26px;font-size:14px}
+nav a:hover,nav a:focus-visible{color:var(--ice)}
+.hero{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:center;padding:56px 0 90px}
+h1{font-size:clamp(34px,5vw,60px);line-height:1.06;font-weight:300;margin:0 0 22px;letter-spacing:-.02em;color:#fff}
+h1 b{font-weight:700;color:var(--ice);text-shadow:0 0 28px rgba(143,220,255,.45)}
+.lead{color:var(--dim);max-width:46ch;margin:0 0 30px}
+.btn{display:inline-block;background:var(--ice);color:#001018;font:600 15px Sora,sans-serif;padding:13px 26px;border:0;border-radius:2px;cursor:pointer;text-decoration:none;box-shadow:0 0 30px rgba(143,220,255,.35);transition:box-shadow .2s,transform .2s}
+.btn:hover{box-shadow:0 0 44px rgba(143,220,255,.6)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ice);border:1px solid var(--line);box-shadow:none;margin-left:10px}
+:focus-visible{outline:2px solid var(--ice2);outline-offset:3px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:0 0 60px rgba(143,220,255,.08);position:relative;overflow:hidden}
+.bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font:400 12px 'JetBrains Mono',monospace;color:var(--dim)}
+.bar span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.bar em{margin-left:auto;font-style:normal;color:var(--ice)}
+textarea{display:block;width:100%;height:240px;resize:vertical;background:transparent;border:0;color:var(--ice2);font:400 13px/1.7 'JetBrains Mono',monospace;padding:16px;tab-size:2;white-space:pre}
+textarea:focus{outline:none;background:rgba(143,220,255,.03)}
+.scan{position:absolute;left:0;right:0;top:41px;height:2px;background:linear-gradient(90deg,transparent,var(--ice),transparent);box-shadow:0 0 18px var(--ice);opacity:0;pointer-events:none}
+.scan.go{animation:scan 1.1s ease-in-out}
+@keyframes scan{0%{top:41px;opacity:1}100%{top:100%;opacity:0}}
+.out{border-top:1px solid var(--line);padding:14px 16px;font:400 13px/1.5 'JetBrains Mono',monospace;min-height:150px;max-height:260px;overflow:auto}
+.score{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;color:var(--dim)}
+.score strong{font:300 40px Sora,sans-serif;color:var(--ice)}
+.f{display:flex;gap:10px;padding:6px 0;border-top:1px dashed var(--line)}
+.f .ln{color:var(--dim);min-width:3.2em}
+.f.hi{color:var(--bad)}.f.mid{color:var(--warn)}.f.lo{color:var(--ice)}
+.f small{display:block;color:var(--dim);font-size:12px}
+.run{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}
+.run .btn{padding:9px 18px;font-size:13px}
+section{padding:70px 0;border-top:1px solid var(--line)}
+h2{font-weight:300;font-size:clamp(26px,3.4vw,40px);margin:0 0 36px;letter-spacing:-.01em;color:#fff;max-width:20ch}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line)}
+.cell{padding:30px 26px;border-right:1px solid var(--line)}
+.cell:last-child{border-right:0}
+.cell h3{margin:0 0 10px;font-weight:600;font-size:18px;color:var(--ice2)}
+.cell p{margin:0;color:var(--dim);font-size:15px}
+.langs{display:flex;flex-wrap:wrap;gap:10px;font:400 14px 'JetBrains Mono',monospace}
+.langs span{border:1px solid var(--line);padding:6px 14px;color:var(--ice);border-radius:2px}
+.cta{text-align:center}
+.cta h2{margin:0 auto 26px;max-width:24ch}
+footer{padding:30px 0 40px;color:var(--dim);font-size:13px;text-align:center;border-top:1px solid var(--line)}
+@media(max-width:860px){.hero{grid-template-columns:1fr;padding-top:24px}.grid{grid-template-columns:1fr}.cell{border-right:0;border-bottom:1px solid var(--line)}.cell:last-child{border-bottom:0}nav a{display:none}}
+@media(prefers-reduced-motion:reduce){.scan.go{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav><div class="logo"><i></i>NYX</div><div><a href="#faehigkeiten">Fähigkeiten</a><a href="#sprachen">Sprachen</a><a href="#start">Starten</a></div></nav>
+
+<header class="hero">
+<div>
+<h1>Dein Code, <b>bis ins letzte Detail</b> durchleuchtet.</h1>
+<p class="lead">Nyx liest Quelltext wie ein Senior-Reviewer: findet Fehler, Sicherheitslücken und Performance-Bremsen, bevor sie live gehen.</p>
+<a class="btn" href="#demo" id="goDemo">Code analysieren</a><a class="btn ghost" href="#faehigkeiten">Mehr erfahren</a>
+</div>
+
+<div class="term" id="demo">
+<div class="bar"><span></span><span></span><span></span>&nbsp;eingabe.js<em id="state">bereit</em></div>
+<div class="scan" id="scan"></div>
+<textarea id="code" spellcheck="false" aria-label="Code zum Analysieren">const API_KEY = "sk-live-93ab12f";
+
+function findDupes(list) {
+  for (let i = 0; i < list.length; i++) {
+    for (let j = 0; j < list.length; j++) {
+      if (i != j && list[i] == list[j]) console.log(list[i]);
+    }
+  }
+}
+
+function render(name) {
+  document.body.innerHTML = "Hallo " + name;
+  eval("track('" + name + "')");
+}
+
+try { risky(); } catch (e) {}
+// TODO: aufräumen</textarea>
+<div class="run"><span>Einfügen oder ändern, dann starten.</span><button class="btn" id="run">Analyse starten</button></div>
+<div class="out" id="out" aria-live="polite"><span style="color:var(--dim)">Noch keine Analyse. Drücke „Analyse starten“.</span></div>
+</div>
+</header>
+
+<section id="faehigkeiten">
+<h2>Drei Blickwinkel auf jede Zeile.</h2>
+<div class="grid">
+<div class="cell"><h3>Fehler aufspüren</h3><p>Leere Catch-Blöcke, unsaubere Vergleiche und vergessene Debug-Ausgaben werden mit Zeilennummer markiert.</p></div>
+<div class="cell"><h3>Sicherheit prüfen</h3><p>Fest eingebaute Schlüssel, eval-Aufrufe und unsichere HTML-Zuweisungen fallen sofort auf.</p></div>
+<div class="cell"><h3>Komplexität messen</h3><p>Verschachtelte Schleifen und überlange Zeilen zeigen, wo dein Code langsam oder schwer lesbar wird.</p></div>
+</div>
+</section>
+
+<section id="sprachen">
+<h2>Funktioniert mit dem, was du schreibst.</h2>
+<div class="langs"><span>JavaScript</span><span>TypeScript</span><span>Python</span><span>Go</span><span>Rust</span><span>Java</span><span>C#</span><span>PHP</span></div>
+</section>
+
+<section class="cta" id="start">
+<h2>Der nächste Bug wartet nicht.</h2>
+<a class="btn" href="#demo">Jetzt Code einfügen</a>
+</section>
+<footer>Nyx · Demo-Analyse läuft lokal in deinem Browser</footer>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var rules=[
+{re:/\beval\s*\(/,sev:'hi',pen:20,t:'eval() führt Text als Code aus',h:'Durch sichere Alternativen ersetzen.'},
+{re:/(api[_-]?key|secret|password|token)\s*[:=]\s*["'][^"']+["']/i,sev:'hi',pen:20,t:'Geheimnis im Quelltext',h:'In Umgebungsvariablen auslagern.'},
+{re:/\.innerHTML\s*=/,sev:'hi',pen:15,t:'innerHTML mit dynamischem Inhalt (XSS-Risiko)',h:'textContent verwenden.'},
+{re:/catch\s*\([^)]*\)\s*\{\s*\}|except[^:]*:\s*pass/,sev:'mid',pen:10,t:'Fehler wird verschluckt',h:'Fehler loggen oder weiterreichen.'},
+{re:/[^=!]==[^=]|!=[^=]/,sev:'mid',pen:5,t:'Lockerer Vergleich',h:'=== bzw. !== nutzen.'},
+{re:/console\.log|\bprint\(/,sev:'lo',pen:3,t:'Debug-Ausgabe übrig',h:'Vor dem Release entfernen.'},
+{re:/TODO|FIXME/,sev:'lo',pen:2,t:'Offene Aufgabe im Code',h:'Ticket anlegen oder erledigen.'}
+];
+function analyze(src){
+var lines=src.split('\n'),res=[],loops=[];
+lines.forEach(function(l,i){
+rules.forEach(function(r){if(r.re.test(l))res.push({n:i+1,sev:r.sev,pen:r.pen,t:r.t,h:r.h})});
+if(l.length>120)res.push({n:i+1,sev:'lo',pen:3,t:'Zeile länger als 120 Zeichen',h:'Aufteilen für bessere Lesbarkeit.'});
+var ind=l.match(/^\s*/)[0].length;
+if(/^\s*(for|while)\b/.test(l)){
+loops=loops.filter(function(x){return x<ind});
+if(loops.length)res.push({n:i+1,sev:'mid',pen:12,t:'Verschachtelte Schleife (quadratische Laufzeit)',h:'Set oder Map statt zweiter Schleife erwägen.'});
+loops.push(ind);}
+});
+return res;
+}
+function show(res){
+var score=Math.max(0,100-res.reduce(function(a,r){return a+r.pen},0));
+var h='<div class="score"><strong>'+score+'</strong>von 100 Punkten · '+res.length+' Funde</div>';
+if(!res.length)h+='<div class="f lo">Keine Auffälligkeiten gefunden.</div>';
+res.sort(function(a,b){return a.n-b.n}).forEach(function(r){
+var d=document.createElement('div');d.textContent=r.t;var t=d.innerHTML,hh=(function(){d.textContent=r.h;return d.innerHTML})();
+h+='<div class="f '+r.sev+'"><span class="ln">Z.'+r.n+'</span><span>'+t+'<small>'+hh+'</small></span></div>';});
+$('out').innerHTML=h;$('state').textContent='fertig';
+}
+$('run').addEventListener('click',function(){
+var s=$('scan');s.classList.remove('go');void s.offsetWidth;s.classList.add('go');
+$('state').textContent='analysiere …';
+$('out').innerHTML='<span style="color:var(--dim)">Scanne Zeilen …</span>';
+setTimeout(function(){show(analyze($('code').value))},900);
+});
+$('goDemo').addEventListener('click',function(){setTimeout(function(){$('run').click()},500)});
+})();
+</script>
+</body>
+</html>
+
+<h6>
+Credits:
+Rene
+Anton
+</h6>
